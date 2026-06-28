@@ -9,3 +9,6 @@ models/
 models/*
 !models/.gitkeep
 
+recordings/
+voices/
+
