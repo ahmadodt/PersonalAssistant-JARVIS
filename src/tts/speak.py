@@ -45,11 +45,11 @@ def synthesize_to_wav(text: str, voice_path: Path, output_path: Path) -> Path:
         raise FileNotFoundError(f"Piper voice model not found: {voice_path}")
 
     voice = PiperVoice.load(str(voice_path))
+
     with wave.open(str(output_path), "wb") as wav_file:
-        voice.synthesize(text, wav_file)
+        voice.synthesize_wav(text, wav_file)
 
     return output_path
-
 
 def play_wav(wav_path: Path) -> None:
     """Play a WAV file through the default speaker."""
@@ -58,9 +58,13 @@ def play_wav(wav_path: Path) -> None:
     sd.wait()
 
 
-def speak(text: str, voice: str | None = None) -> str:
-    """Generate speech locally and play it through the speaker."""
+def speak(text: str, voice: str | None = None, output_path: Path | None = None) -> str:
+    """Generate speech locally and play it, or save to output_path instead."""
     voice_path = resolve_voice_path(voice)
+
+    if output_path is not None:
+        synthesize_to_wav(text, voice_path, output_path)
+        return text
 
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_file:
         wav_path = Path(tmp_file.name)
@@ -81,12 +85,13 @@ def parse_args() -> argparse.Namespace:
         "--voice",
         help=f"Piper voice model path or voice name. Default: {DEFAULT_VOICE}",
     )
+    parser.add_argument("--output", type=Path, help="Save audio to this WAV file instead of playing.")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    speak(args.text, args.voice)
+    speak(args.text, args.voice, args.output)
 
 
 if __name__ == "__main__":
