@@ -3,6 +3,7 @@ scipy
 numpy
 faster-whisper
 llama-cpp-python
+huggingface_hub
 piper-tts
 litellm
 fastapi
@@ -11,3 +12,4 @@ python-dotenv
 langgraph
 mcp
 
+python-multipart

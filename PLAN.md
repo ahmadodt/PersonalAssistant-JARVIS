@@ -17,6 +17,10 @@
 - [x] Add authentication.
 - [x] Add session management.
 - [x] Add assistant conversation endpoints.
+- [x] Add voice upload endpoint.
+- [x] Add per-session memory files.
+- [x] Add streaming chat responses.
+- [x] Add API logging and endpoint error handling.
 - [ ] Add Docker support.
 
 ## Phase 3: Mobile Access
