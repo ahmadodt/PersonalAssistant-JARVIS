@@ -27,5 +27,6 @@
 
 - [x] Add iPhone/Android access through app, shortcut, or automation.
 - [x] Support authenticated calls to the FastAPI backend.
+- [x] Add self-signed HTTPS support for mobile microphone access.
 - [ ] Improve always-available local deployment.
 

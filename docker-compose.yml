@@ -3,15 +3,16 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: uvicorn src.api.main:app --host ${JARVIS_HOST:-0.0.0.0} --port ${JARVIS_PORT:-8000}
+    command: python -m src.api.main
     ports:
       - "${JARVIS_HOST:-0.0.0.0}:${JARVIS_PORT:-8000}:${JARVIS_PORT:-8000}"
     env_file:
       - .env
     volumes:
-      # Keep local models, voices, memory, and logs outside the image.
+      # Keep local assets, memory, logs, and certs outside the image.
       - ./models:/app/models
       - ./voices:/app/voices
       - ./data:/app/data
       - ./logs:/app/logs
+      - ./certs:/app/certs
     restart: unless-stopped

@@ -24,7 +24,7 @@
       width: min(760px, 100%);
       min-height: 100vh;
       display: grid;
-      grid-template-rows: auto 1fr auto;
+      grid-template-rows: auto auto 1fr auto;
     }
 
     header,
@@ -74,6 +74,16 @@
       display: grid;
       grid-template-columns: 1fr;
       gap: 10px;
+    }
+
+    .warning {
+      margin: 12px 14px 0;
+      padding: 10px 12px;
+      border: 1px solid #8a5d00;
+      border-radius: 6px;
+      background: #2d240f;
+      color: #ffd98a;
+      line-height: 1.4;
     }
 
     .messages {
@@ -133,6 +143,7 @@
       </div>
     </header>
 
+    <div id="httpsWarning" class="warning" hidden>Microphone access requires HTTPS. See README for setup instructions.</div>
     <section id="messages" class="messages" aria-live="polite"></section>
 
     <footer>
@@ -152,6 +163,7 @@
     const messages = document.querySelector("#messages");
     const recordButton = document.querySelector("#record");
     const statusLine = document.querySelector("#status");
+    const httpsWarning = document.querySelector("#httpsWarning");
 
     let sessionId = localStorage.getItem("jarvis_session_id") || "";
     let audioContext = null;
@@ -193,6 +205,12 @@
       if (!id) return;
       sessionId = id;
       localStorage.setItem("jarvis_session_id", id);
+    }
+
+    function requiresHttpsForMic() {
+      return window.location.protocol !== "https:"
+        && window.location.hostname !== "localhost"
+        && window.location.hostname !== "127.0.0.1";
     }
 
     async function sendChat(text) {
@@ -269,6 +287,11 @@
 
     async function startRecording() {
       if (!apiKey()) throw new Error("Enter your API key first.");
+      if (requiresHttpsForMic()) {
+        httpsWarning.hidden = false;
+        throw new Error("Microphone access requires HTTPS. See README for setup instructions.");
+      }
+
       recordedBuffers = [];
       mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;

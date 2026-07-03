@@ -69,3 +69,29 @@ docker-compose up --build
 ```
 
 The API runs on `http://127.0.0.1:8000` and uses the same mounted `data/` and `logs/` folders across restarts.
+
+## HTTPS Setup
+
+Mobile browsers usually require HTTPS before they allow microphone access. Jarvis can use a local self-signed certificate for this.
+
+Generate the certificate files:
+
+```powershell
+.\scripts\generate_cert.ps1
+```
+
+On Mac/Linux, run:
+
+```bash
+sh scripts/generate_cert.sh
+```
+
+The scripts create `certs/cert.pem` and `certs/key.pem`. Keep these files in `certs/`; Docker mounts that folder into the container. Private key files are ignored by git.
+
+Restart Docker after generating the certs:
+
+```powershell
+docker-compose up --build
+```
+
+On your phone, open `https://<your-computer-ip>:8000/` and accept the self-signed certificate warning in the browser. After that, microphone access should work on mobile.

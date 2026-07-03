@@ -21,6 +21,8 @@ load_dotenv()
 CLIENT_INDEX = Path(__file__).resolve().parents[1] / "client" / "index.html"
 DEFAULT_HOST = "0.0.0.0"
 DEFAULT_PORT = 8000
+DEFAULT_SSL_CERT = Path("certs/cert.pem")
+DEFAULT_SSL_KEY = Path("certs/key.pem")
 
 app = FastAPI(title="Jarvis API")
 app.include_router(chat_router)
@@ -39,10 +41,26 @@ def get_api_port() -> int:
     return int(value)
 
 
+def get_ssl_paths() -> tuple[Path, Path]:
+    """Read configured SSL certificate paths."""
+    cert_path = Path(os.getenv("JARVIS_SSL_CERT") or DEFAULT_SSL_CERT)
+    key_path = Path(os.getenv("JARVIS_SSL_KEY") or DEFAULT_SSL_KEY)
+    return cert_path, key_path
+
+
+def uvicorn_ssl_kwargs() -> dict[str, str]:
+    """Return Uvicorn SSL args when both cert files exist."""
+    cert_path, key_path = get_ssl_paths()
+    if cert_path.exists() and key_path.exists():
+        return {"ssl_certfile": str(cert_path), "ssl_keyfile": str(key_path)}
+    return {}
+
+
 @app.on_event("startup")
 def startup() -> None:
     """Log that the API has started."""
-    get_logger().info("Jarvis API started on %s:%s", get_api_host(), get_api_port())
+    scheme = "https" if uvicorn_ssl_kwargs() else "http"
+    get_logger().info("Jarvis API started on %s://%s:%s", scheme, get_api_host(), get_api_port())
 
 
 @app.middleware("http")
@@ -66,4 +84,9 @@ def health() -> dict[str, str]:
 
 
 if __name__ == "__main__":
-    uvicorn.run("src.api.main:app", host=get_api_host(), port=get_api_port())
+    uvicorn.run(
+        "src.api.main:app",
+        host=get_api_host(),
+        port=get_api_port(),
+        **uvicorn_ssl_kwargs(),
+    )
