@@ -45,3 +45,21 @@ def get_session(session_id: str | None = None) -> tuple[str, History]:
 def save_session(session_id: str, history: History) -> None:
     """Persist a session's conversation history."""
     save_memory(session_path(_clean_session_id(session_id)), history)
+
+
+def list_sessions() -> list[str]:
+    """Return active in-memory session IDs."""
+    return sorted(_sessions.keys())
+
+
+def delete_session(session_id: str) -> bool:
+    """Delete a session from memory and disk if it exists."""
+    resolved_session_id = _clean_session_id(session_id)
+    path = session_path(resolved_session_id)
+    existed = resolved_session_id in _sessions or path.exists()
+
+    _sessions.pop(resolved_session_id, None)
+    if path.exists():
+        path.unlink()
+
+    return existed
