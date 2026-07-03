@@ -21,7 +21,7 @@
 - [x] Add per-session memory files.
 - [x] Add streaming chat responses.
 - [x] Add API logging and endpoint error handling.
-- [ ] Add Docker support.
+- [x] Add Docker support.
 
 ## Phase 3: Mobile Access
 
