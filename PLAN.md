@@ -13,10 +13,10 @@
 
 ## Phase 2: API Layer
 
-- [ ] Add FastAPI application.
-- [ ] Add authentication.
-- [ ] Add session management.
-- [ ] Add assistant conversation endpoints.
+- [x] Add FastAPI application.
+- [x] Add authentication.
+- [x] Add session management.
+- [x] Add assistant conversation endpoints.
 - [ ] Add Docker support.
 
 ## Phase 3: Mobile Access
