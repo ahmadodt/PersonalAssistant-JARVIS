@@ -6,13 +6,14 @@ import argparse
 import os
 import shutil
 import subprocess
-from pathlib import Path
+from collections.abc import Iterator
 
 from dotenv import load_dotenv
 from llama_cpp import Llama
 
 
-DEFAULT_MODEL_PATH = Path("models/phi-3-mini.gguf")
+DEFAULT_HF_REPO = "microsoft/Phi-3-mini-4k-instruct-gguf"
+DEFAULT_HF_FILENAME = "Phi-3-mini-4k-instruct-q4.gguf"
 DEFAULT_SYSTEM_PROMPT = "You are Jarvis, a helpful personal assistant."
 
 
@@ -33,10 +34,15 @@ def gpu_available() -> bool:
     return result.returncode == 0
 
 
-def resolve_model_path(model_path: str | None = None) -> Path:
-    """Choose model path from CLI, .env, or the default path."""
-    load_dotenv()
-    return Path(model_path or os.getenv("JARVIS_LLAMACPP_MODEL_PATH") or DEFAULT_MODEL_PATH)
+def load_model(repo_id: str, filename: str) -> Llama:
+    """Download (if needed) and load a GGUF model from HuggingFace Hub."""
+    return Llama.from_pretrained(
+        repo_id=repo_id,
+        filename=filename,
+        n_gpu_layers=-1 if gpu_available() else 0,
+        n_ctx=4096,
+        verbose=False,
+    )
 
 
 def build_prompt(prompt: str, system_prompt: str = DEFAULT_SYSTEM_PROMPT) -> str:
@@ -44,36 +50,50 @@ def build_prompt(prompt: str, system_prompt: str = DEFAULT_SYSTEM_PROMPT) -> str
     return f"System: {system_prompt}\nUser: {prompt.strip()}\nAssistant:"
 
 
+def _stream_tokens(chunks: Iterator[dict]) -> Iterator[str]:
+    """Yield text tokens from llama.cpp streaming chunks."""
+    for chunk in chunks:
+        choices = chunk.get("choices") or []
+        if not choices:
+            continue
+        token = choices[0].get("text", "")
+        if token:
+            yield token
+
+
 def infer(
     prompt: str,
-    model_path: str | None = None,
+    repo_id: str | None = None,
+    filename: str | None = None,
     max_tokens: int = 256,
     temperature: float = 0.7,
-) -> str:
-    """Run a prompt through a local GGUF model and return the response text."""
-    resolved_model_path = resolve_model_path(model_path)
-    if not resolved_model_path.exists():
-        raise FileNotFoundError(f"Model file not found: {resolved_model_path}")
+    stream: bool = False,
+) -> str | Iterator[str]:
+    """Run a prompt through a HuggingFace GGUF model."""
+    load_dotenv()
+    resolved_repo = repo_id or os.getenv("JARVIS_HF_REPO") or DEFAULT_HF_REPO
+    resolved_filename = filename or os.getenv("JARVIS_HF_FILENAME") or DEFAULT_HF_FILENAME
 
-    llm = Llama(
-        model_path=str(resolved_model_path),
-        n_gpu_layers=-1 if gpu_available() else 0,
-        n_ctx=4096,
-        verbose=False,
-    )
+    llm = load_model(resolved_repo, resolved_filename)
     result = llm(
         build_prompt(prompt),
         max_tokens=max_tokens,
         temperature=temperature,
         stop=["User:", "System:"],
+        stream=stream,
     )
+
+    if stream:
+        return _stream_tokens(result)
+
     return result["choices"][0]["text"].strip()
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run local LLM inference.")
     parser.add_argument("--prompt", required=True)
-    parser.add_argument("--model")
+    parser.add_argument("--repo", help=f"HuggingFace repo ID. Default: {DEFAULT_HF_REPO}")
+    parser.add_argument("--filename", help=f"GGUF filename in the repo. Default: {DEFAULT_HF_FILENAME}")
     parser.add_argument("--max-tokens", type=int, default=256)
     parser.add_argument("--temperature", type=float, default=0.7)
     return parser.parse_args()
@@ -81,9 +101,8 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    print(infer(args.prompt, args.model, args.max_tokens, args.temperature))
+    print(infer(args.prompt, args.repo, args.filename, args.max_tokens, args.temperature))
 
 
 if __name__ == "__main__":
     main()
-
