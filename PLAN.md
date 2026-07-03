@@ -6,10 +6,10 @@
 - [x] Add microphone recording utility.
 - [x] Add faster-whisper speech-to-text.
 - [x] Add llama.cpp local LLM integration.
-- [ ] Add piper-tts text-to-speech.
-- [ ] Add speaker playback.
-- [ ] Add persistent memory.
-- [ ] Connect the local voice loop.
+- [x] Add piper-tts text-to-speech.
+- [x] Add speaker playback.
+- [x] Add persistent memory.
+- [x] Connect the local voice loop.
 
 ## Phase 2: API Layer
 
